@@ -29,7 +29,6 @@ jobs:
 
       - name: Generate Artifacts
         run: npm run package
-        continue-on-error: true
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v2
@@ -39,7 +38,7 @@ jobs:
 
       # Notify Slack on Build Failure
       - name: Send Slack Notification on Build Failure
-        if: failure()
+        if: ${{ failure() }}
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
@@ -76,7 +75,7 @@ jobs:
 
       # Notify Slack on Test Failure
       - name: Send Slack Notification on Test Failure
-        if: failure()
+        if: ${{ failure() }}
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
@@ -105,7 +104,7 @@ jobs:
 
       # Notify Slack on Deployment Failure
       - name: Send Slack Notification on Deployment Failure
-        if: failure()
+        if: ${{ failure() }}
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
