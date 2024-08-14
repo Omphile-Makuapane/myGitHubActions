@@ -19,16 +19,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '14.x'
+          node-version: '14'
 
       - name: Install Dependencies
         run: npm install
 
-      - name: List Installed Packages
-        run: npm list
-
       - name: Compile Source Code
-        run: npm run build --verbose
+        run: npm run build
 
       - name: Generate Artifacts
         run: npm run package
@@ -40,3 +37,80 @@ jobs:
           name: build-artifacts
           path: ./dist/
 
+      # Notify Slack on Build Failure
+      - name: Send Slack Notification on Build Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": ":x: Build failed for ${{ github.repository }} on branch ${{ github.ref }}. Please check the details."
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Unit Tests
+        run: npm test
+
+      - name: Run Code Coverage
+        run: npm run coverage
+
+      - name: Code Quality Analysis
+        run: npm run lint
+
+      # Notify Slack on Test Failure
+      - name: Send Slack Notification on Test Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": ":x: Tests failed for ${{ github.repository }} on branch ${{ github.ref }}. Please check the details."
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying application to staging environment..."
+          # Example deployment command
+          ./deploy.sh staging
+
+      - name: Notify Deployment Success
+        run: echo "Deployment to staging environment successful!"
+
+      # Notify Slack on Deployment Failure
+      - name: Send Slack Notification on Deployment Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": ":x: Deployment failed for ${{ github.repository }} on branch ${{ github.ref }}. Please check the details."
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
